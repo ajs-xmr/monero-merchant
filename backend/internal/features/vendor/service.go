@@ -31,7 +31,7 @@ func NewVendorService(repo VendorRepository, db *gorm.DB, cfg *config.Config, rp
 	return &VendorService{repo: repo, db: db, config: cfg, rpcClient: rpcClient}
 }
 
-const moneroSubaddressPattern = "^8[0-9AB][1-9A-HJ-NP-Za-km-z]{93}$"
+const moneroSubaddressPattern = "^(8[0-9AB]|7[2-9AB])[1-9A-HJ-NP-Za-km-z]{93}$"
 
 var moneroSubaddressRegex = regexp.MustCompile(moneroSubaddressPattern)
 

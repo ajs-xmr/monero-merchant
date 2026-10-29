@@ -1,9 +1,23 @@
-.PHONY: install up down logs ps restart config pull build rebuild reset clean help
+.PHONY: install stagenet up down logs ps restart config pull build rebuild reset clean help
 .DEFAULT_GOAL := help
 
+ifneq ($(filter testnet,$(MAKECMDGOALS)),)
+$(error Testnet is not supported. Use make install stagenet for testing)
+endif
+
+INSTALL_NETWORK := $(filter stagenet,$(MAKECMDGOALS))
+ifneq ($(INSTALL_NETWORK),)
+ifeq ($(filter install,$(MAKECMDGOALS)),)
+$(error Use make install stagenet)
+endif
+endif
+
 install:
-	./setup.sh
+	./setup.sh $(INSTALL_NETWORK)
 	docker compose up -d --build
+
+stagenet:
+	@:
 
 up:
 	docker compose up -d
@@ -49,6 +63,7 @@ clean:
 help:
 	@echo "Available targets:"
 	@echo "  make install   - run setup.sh, build and start services"
+	@echo "  make install stagenet - install using the Monero stagenet"
 	@echo "  make up        - start existing containers"
 	@echo "  make build     - build the backend, frontend and gateway images from local source"
 	@echo "  make rebuild   - build local source and recreate the backend, frontend and gateway"

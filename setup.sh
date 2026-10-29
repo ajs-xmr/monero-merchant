@@ -5,6 +5,43 @@ ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd -- "$ROOT_DIR"
 MONEROPAY_REPO="https://gitlab.com/moneropay/moneropay.git"
 
+# Monero Mainnet or Stagenet
+existing_network=mainnet
+if [ -f .env ]; then
+  existing_network="$(awk -F= '$1 == "MONERO_NETWORK" { print substr($0, index($0, "=") + 1); exit }' .env)"
+  existing_network="${existing_network:-mainnet}"
+fi
+network="${1:-$existing_network}"
+if [ "$#" -gt 1 ]; then
+  echo "Usage: ./setup.sh [mainnet|stagenet]" >&2
+  exit 1
+fi
+case "$network" in
+  mainnet) network_flag="" ;;
+  stagenet) network_flag="--stagenet" ;;
+  *) echo "Unknown Monero network: $network" >&2; exit 1 ;;
+esac
+
+if [ "$network" != "$existing_network" ] && [ -e "$ROOT_DIR/moneropay/data/wallet/wallet" ]; then
+  echo "Cannot switch from $existing_network to $network with an existing wallet. Use a separate checkout with fresh wallet and database data for the other network." >&2
+  exit 1
+fi
+
+set_env() {
+  local key="$1" value="$2" temp_file
+  temp_file="$(mktemp "$ROOT_DIR/.env.tmp.XXXXXX")"
+  if awk -v key="$key" -v value="$value" '
+    index($0, key "=") == 1 { print key "=" value; found = 1; next }
+    { print }
+    END { if (!found) print key "=" value }
+  ' .env > "$temp_file" && cat "$temp_file" > .env; then
+    rm -f "$temp_file"
+  else
+    rm -f "$temp_file"
+    return 1
+  fi
+}
+
 gen_secret() {
   openssl rand -hex 32
 }
@@ -56,6 +93,20 @@ fi
 
 [ -f .env ] || cp .env.example .env
 
+set_env "MONERO_NETWORK" "$network"
+set_env "MONERO_WALLET_RPC_NETWORK_FLAG" "$network_flag"
+if [ "$#" -gt 0 ]; then
+  case "$network" in
+    mainnet) daemon_host=xmr-node.cakewallet.com; daemon_port=18081 ;;
+    stagenet) daemon_host=node.monerodevs.org; daemon_port=38089 ;;
+  esac
+  set_env "MONERO_DAEMON_RPC_HOSTNAME" "$daemon_host"
+  set_env "MONERO_DAEMON_RPC_PORT" "$daemon_port"
+  set_env "MONERO_DAEMON_RPC_ENDPOINT" "http://$daemon_host:$daemon_port/json_rpc"
+  set_env "MONERO_DAEMON_RPC_USERNAME" ""
+  set_env "MONERO_DAEMON_RPC_PASSWORD" ""
+fi
+
 if [ ! -d "$ROOT_DIR/moneropay" ]; then
   git clone "$MONEROPAY_REPO"
 fi
@@ -102,6 +153,7 @@ fill_if_empty "MONERO_WALLET_RPC_PASSWORD" "$(gen_secret)"
 
 echo
 echo "Setup complete."
+echo "Monero network: $network"
 echo
 echo "Admin login (stored in .env):"
 echo "  name:     $(grep -m1 '^ADMIN_NAME=' .env | cut -d= -f2-)"
