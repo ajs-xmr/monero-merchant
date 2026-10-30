@@ -391,3 +391,14 @@ tr:hover{background:rgba(255,255,255,.025)!important}
 .connect-till .cv{flex:1;font-family:'SF Mono',Consolas,monospace;font-size:13.5px;color:var(--text-primary);word-break:break-all}
 .connect-till .ccopy{color:var(--success);font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0}
 .connect-till .chint{font-size:12px;color:var(--text-muted);margin-top:6px}
+.connect-till .till-setup{display:flex;align-items:flex-start;gap:20px}
+.connect-till .till-qr{width:200px;max-width:100%;flex-shrink:0;background:#fff;color:#111;border-radius:12px;padding:8px;box-sizing:border-box;font-size:13px}
+.connect-till .till-qr svg{display:block;width:100%;height:auto}
+.connect-till .till-details{flex:1;min-width:0}
+.connect-till .cv{min-width:0}
+@media(max-width:700px){
+  .connect-till .till-setup{flex-direction:column;gap:16px}
+  .connect-till .till-details{width:100%}
+  .connect-till .crow{flex-wrap:wrap;gap:8px}
+  .connect-till .ck{width:100%}
+}

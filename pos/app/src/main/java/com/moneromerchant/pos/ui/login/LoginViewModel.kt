@@ -69,7 +69,24 @@ class LoginViewModel @Inject constructor(
         errorMessage = ""
     }
 
+    fun loginFromQr(raw: String) {
+        if (inProgress) return
+        val payload = try {
+            PosLoginQr.parse(raw)
+        } catch (e: Exception) {
+            // Parser errors may contain credentials; show only a fixed message.
+            errorMessage = "Invalid POS login QR code"
+            return
+        }
+        instanceUrl = payload.instanceUrl
+        vendorID = payload.vendorId.toString()
+        username = payload.username
+        password = payload.password
+        loginPressed()
+    }
+
     fun loginPressed() {
+        if (inProgress) return
         errorMessage = ""
         val trimmedInstanceUrl = instanceUrl.trim()
         if (trimmedInstanceUrl.isEmpty()) {
@@ -103,15 +120,21 @@ class LoginViewModel @Inject constructor(
         }
         instanceUrl = normalizedInstanceUrl
 
+        inProgress = true
+        val id = vendorID.toInt()
+        val loginUsername = username
+        val loginPassword = password
         viewModelScope.launch {
-            login(normalizedInstanceUrl)
+            try {
+                login(normalizedInstanceUrl, id, loginUsername, loginPassword)
+            } finally {
+                inProgress = false
+            }
         }
     }
 
-    private suspend fun login(normalizedInstanceUrl: String) {
-        inProgress = true
-        val resp = authRepository.login(instanceUrl = normalizedInstanceUrl, vendorID = vendorID.toInt(), username = username, password = password)
-        inProgress = false
+    private suspend fun login(normalizedInstanceUrl: String, id: Int, loginUsername: String, loginPassword: String) {
+        val resp = authRepository.login(instanceUrl = normalizedInstanceUrl, vendorID = id, username = loginUsername, password = loginPassword)
         resp.fold(
             onSuccess = {
 

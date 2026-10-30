@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,11 +19,16 @@ import androidx.navigation.NavHostController
 import com.moneromerchant.pos.ui.common.composables.CustomAlertDialog
 import com.moneromerchant.pos.R
 import com.moneromerchant.pos.ui.common.composables.CustomOutlinedTextField
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 
 // LoginScreenRoot
 @Composable
 fun LoginScreenRoot(viewModel: LoginViewModel, navController: NavHostController) {
     viewModel.setNavController(navController)
+    val scanner = rememberLauncherForActivityResult(ScanContract()) { result ->
+        result.contents?.let(viewModel::loginFromQr)
+    }
     LoginScreen(
         instanceUrl = viewModel.instanceUrl,
         vendorID = viewModel.vendorID,
@@ -36,6 +42,16 @@ fun LoginScreenRoot(viewModel: LoginViewModel, navController: NavHostController)
         updatePassword = viewModel::updatePassword,
         resetErrorMessage = viewModel::resetErrorMessage,
         loginPressed = viewModel::loginPressed,
+        scanQrPressed = {
+            scanner.launch(ScanOptions().apply {
+                setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                addExtra("CHARACTER_SET", "UTF-8")
+                setPrompt("Scan the POS login QR code")
+                setBeepEnabled(false)
+                setBarcodeImageEnabled(false)
+                setOrientationLocked(false)
+            })
+        },
     )
 }
 
@@ -53,7 +69,8 @@ fun LoginScreen(
     updateUsername: (String) -> Unit,
     updatePassword: (String) -> Unit,
     resetErrorMessage: () -> Unit,
-    loginPressed: () -> Unit
+    loginPressed: () -> Unit,
+    scanQrPressed: () -> Unit,
 
 ) {
     Scaffold(modifier = Modifier.fillMaxSize().imePadding()) { innerPadding ->
@@ -77,17 +94,24 @@ fun LoginScreen(
                 value = password, label = "Password", onValueChange = {updatePassword(it)}, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Password)
             )
             Spacer(modifier = Modifier.height(16.dp))
-            FilledTonalButton(
-                onClick = {loginPressed()},
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Row {
-                    Text("Login")
-                    when {
-                        inProgress -> {
+                FilledTonalButton(
+                    onClick = loginPressed,
+                    enabled = !inProgress,
+                ) {
+                    Row {
+                        Text("Login")
+                        if (inProgress) {
                             Spacer(modifier = Modifier.width(8.dp))
                             CircularProgressIndicator(modifier = Modifier.height(20.dp).width(20.dp))
                         }
                     }
+                }
+                FilledTonalButton(onClick = scanQrPressed, enabled = !inProgress) {
+                    Text("Scan QR")
                 }
             }
         }

@@ -1,6 +1,7 @@
 [versions]
 agp = "9.4.1"
 core = "3.5.4"
+zxingEmbedded = "4.3.0"
 coreSplashscreen = "1.2.0"
 datastorePreferences = "1.2.1"
 escposThermalprinterAndroid = "3.3.0"
@@ -39,6 +40,7 @@ androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 androidx-ui-text-google-fonts = { module = "androidx.compose.ui:ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 core = { module = "com.google.zxing:core", version.ref = "core" }
+zxing-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxingEmbedded" }
 escpos-thermalprinter-android = { module = "com.github.DantSu:ESCPOS-ThermalPrinter-Android", version.ref = "escposThermalprinterAndroid" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hiltAndroid" }

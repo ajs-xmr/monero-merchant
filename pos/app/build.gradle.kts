@@ -95,6 +95,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.core)
+    implementation(libs.zxing.embedded)
     implementation(libs.nanohttpd)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.ktor.client.core)

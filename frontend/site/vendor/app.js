@@ -564,6 +564,29 @@ function filterTransactions() {
   tableContainer.appendChild(createTransactionTable(filtered));
 }
 
+function createTillQR(instanceUrl, vendorId, username, password) {
+  const container = document.createElement('div');
+  container.className = 'till-qr';
+  try {
+    qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+    const qr = qrcode(0, 'M');
+    qr.addData(JSON.stringify({
+      instance_url: instanceUrl,
+      vendor_id: vendorId,
+      username: username,
+      password: password,
+    }));
+    qr.make();
+    container.innerHTML = qr.createSvgTag({ scalable: true, margin: 8 });
+    const svg = container.querySelector('svg');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'POS login QR code');
+  } catch (err) {
+    container.textContent = 'QR code unavailable. Use the login details beside it.';
+  }
+  return container;
+}
+
 async function renderPOS(container, headerActions) {
   const addBtn = document.createElement('button');
   addBtn.className = 'btn btn-primary';
@@ -584,8 +607,13 @@ async function renderPOS(container, headerActions) {
     panel.innerHTML =
       '<h3>📲 Connect your till</h3>' +
       '<div class="lead">Just created <strong>' + escapeHtml(d.name) + '</strong>. Enter these into the Monero Merchant Android app:</div>' +
+      '<div class="till-setup"><div class="till-details">' +
       row('Instance URL', url) + row('Vendor ID', String(vid)) + row('Username', d.name) + row('Password', d.password) +
+      '</div></div>' +
       '<div class="chint">🔒 The password is shown only now — copy it before leaving this page.</div>';
+    if (Number.isInteger(Number(vid)) && Number(vid) > 0) {
+      panel.querySelector('.till-setup').prepend(createTillQR(url, Number(vid), d.name, d.password));
+    }
     container.appendChild(panel);
     panel.querySelectorAll('.ccopy').forEach(b => b.addEventListener('click', () => {
       const ok = clipCopy(b.dataset.v);
