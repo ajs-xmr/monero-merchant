@@ -17,6 +17,7 @@ type Config struct {
 
 	// Server Configuration
 	Port string
+	RequireVendorInvite bool
 
 	// Database Configuration
 	DBHost     string
@@ -105,6 +106,12 @@ func LoadConfig() (*Config, error) {
 		TrustedProxyHeader: os.Getenv("TRUSTED_PROXY_HEADER"),
 
 		FrankfurterBaseURL: getEnvDefault("FRANKFURTER_BASE_URL", "https://api.frankfurter.dev"),
+	}
+
+	requireInvite, err := strconv.ParseBool(getEnvDefault("REQUIRE_VENDOR_INVITE", "true"))
+	config.RequireVendorInvite = requireInvite
+	if err != nil {
+		return nil, fmt.Errorf("invalid REQUIRE_VENDOR_INVITE: %w", err)
 	}
 
 	if period := os.Getenv("WALLET_AUTO_REFRESH_PERIOD"); period != "" {

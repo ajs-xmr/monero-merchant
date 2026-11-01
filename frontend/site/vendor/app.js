@@ -895,9 +895,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  $('show-signup').addEventListener('click', (e) => {
+  $('show-signup').addEventListener('click', async (e) => {
     e.preventDefault();
     openModal('signup-modal');
+    const submit = $('signup-form').querySelector('[type="submit"]');
+    submit.disabled = true;
+    $('signup-error').classList.remove('show');
+    try {
+      const res = await fetch(API_BASE + '/vendor/registration-config', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Could not load registration settings. Please try again.');
+      const settings = await res.json();
+      if (typeof settings.require_vendor_invite !== 'boolean') {
+        throw new Error('Could not load registration settings. Please try again.');
+      }
+      $('signup-invite-group').hidden = !settings.require_vendor_invite;
+      $('signup-invite').required = settings.require_vendor_invite;
+      $('signup-invite').disabled = !settings.require_vendor_invite;
+      if (!settings.require_vendor_invite) $('signup-invite').value = '';
+      submit.disabled = false;
+    } catch (err) {
+      $('signup-error').textContent = err.message;
+      $('signup-error').classList.add('show');
+    }
   });
 
   $('signup-form').addEventListener('submit', async (e) => {

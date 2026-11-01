@@ -11,6 +11,7 @@ import (
 type VendorRepository interface {
 	VendorByNameExists(ctx context.Context, name string) (bool, error)
 	FindInviteByCode(ctx context.Context, inviteCode string) (*models.Invite, error)
+	CreateVendor(ctx context.Context, vendor *models.Vendor) error
 	CreateVendorWithInvite(ctx context.Context, vendor *models.Vendor, inviteID uint) error
 	GetVendorByID(ctx context.Context, vendorID uint) (*models.Vendor, error)
 	DeleteVendor(ctx context.Context, vendorID uint) error
@@ -63,6 +64,10 @@ func (r *vendorRepository) FindInviteByCode(ctx context.Context, inviteCode stri
 		return nil, err
 	}
 	return &invite, nil
+}
+
+func (r *vendorRepository) CreateVendor(ctx context.Context, vendor *models.Vendor) error {
+	return r.db.WithContext(ctx).Create(vendor).Error
 }
 
 var ErrInviteUsed = errors.New("invite code already used")

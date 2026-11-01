@@ -102,6 +102,7 @@ func NewRouter(ctx context.Context, cfg *config.Config, db *gorm.DB, rpcClient *
 
 			// Vendor routes
 			r.Post("/vendor/create", vendorHandler.CreateVendor)
+			r.Get("/vendor/registration-config", vendorHandler.RegistrationConfig)
 
 			// Callback routes
 			r.Post("/callback/receive/{jwt}", callbackHandler.ReceiveTransaction)

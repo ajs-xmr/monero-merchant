@@ -32,6 +32,14 @@ type createVendorResponse struct {
 	ID      uint `json:"id"`
 }
 
+func (h *VendorHandler) RegistrationConfig(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	_ = json.NewEncoder(w).Encode(map[string]bool{
+		"require_vendor_invite": h.service.RequiresVendorInvite(),
+	})
+}
+
 func (h *VendorHandler) CreateVendor(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()

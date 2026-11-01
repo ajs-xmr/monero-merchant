@@ -232,6 +232,10 @@ func (s *VendorService) relayPendingTransfers(ctx context.Context) bool {
 	return ok
 }
 
+func (s *VendorService) RequiresVendorInvite() bool {
+	return s.config == nil || s.config.RequireVendorInvite
+}
+
 func (s *VendorService) CreateVendor(ctx context.Context, name string, email string, password string, inviteCode string, moneroSubaddress string) (id uint, httpErr *models.HTTPError) {
 
 	if err := utils.ValidateUsername(name); err != nil {
@@ -256,21 +260,25 @@ func (s *VendorService) CreateVendor(ctx context.Context, name string, email str
 		return 0, models.NewHTTPError(http.StatusBadRequest, "Vendor username already taken. Please choose a different name")
 	}
 
-	invite, err := s.repo.FindInviteByCode(ctx, inviteCode)
-	if err != nil {
-		return 0, models.NewHTTPError(http.StatusBadRequest, "invalid invite code")
-	}
+	var invite *models.Invite
+	if s.RequiresVendorInvite() {
+		var err error
+		invite, err = s.repo.FindInviteByCode(ctx, inviteCode)
+		if err != nil {
+			return 0, models.NewHTTPError(http.StatusBadRequest, "invalid invite code")
+		}
 
-	if invite.Used {
-		return 0, models.NewHTTPError(http.StatusBadRequest, "invite code already used")
-	}
+		if invite.Used {
+			return 0, models.NewHTTPError(http.StatusBadRequest, "invite code already used")
+		}
 
-	if time.Now().After(invite.ValidUntil) {
-		return 0, models.NewHTTPError(http.StatusBadRequest, "invite code expired")
-	}
+		if time.Now().After(invite.ValidUntil) {
+			return 0, models.NewHTTPError(http.StatusBadRequest, "invite code expired")
+		}
 
-	if invite.ForcedName != nil && *invite.ForcedName != name {
-		return 0, models.NewHTTPError(http.StatusBadRequest, "invite code is for a different name")
+		if invite.ForcedName != nil && *invite.ForcedName != name {
+			return 0, models.NewHTTPError(http.StatusBadRequest, "invite code is for a different name")
+		}
 	}
 
 	moneroSubaddress = strings.TrimSpace(moneroSubaddress)
@@ -294,7 +302,11 @@ func (s *VendorService) CreateVendor(ctx context.Context, name string, email str
 		MoneroSubaddress: moneroSubaddress,
 	}
 
-	err = s.repo.CreateVendorWithInvite(ctx, vendor, invite.ID)
+	if s.RequiresVendorInvite() {
+		err = s.repo.CreateVendorWithInvite(ctx, vendor, invite.ID)
+	} else {
+		err = s.repo.CreateVendor(ctx, vendor)
+	}
 	if errors.Is(err, ErrInviteUsed) {
 		return 0, models.NewHTTPError(http.StatusBadRequest, err.Error())
 	}

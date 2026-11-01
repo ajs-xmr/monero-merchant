@@ -68,6 +68,7 @@ services:
       WALLET_AUTO_REFRESH_PERIOD: "2"
 
       # Set by the gateway
+      REQUIRE_VENDOR_INVITE: ${REQUIRE_VENDOR_INVITE:-true}
       TRUSTED_PROXY_HEADER: X-Real-IP
 
   db:
