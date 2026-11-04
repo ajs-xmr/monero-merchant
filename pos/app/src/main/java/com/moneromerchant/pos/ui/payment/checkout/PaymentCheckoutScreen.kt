@@ -15,9 +15,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.moneromerchant.pos.R
+import com.moneromerchant.pos.data.hce.NfcAvailability
 import com.moneromerchant.pos.ui.PaymentSuccess
 import com.moneromerchant.pos.ui.common.composables.CustomAlertDialog
 import com.moneromerchant.pos.ui.common.composables.FiatCard
@@ -28,6 +35,7 @@ import java.math.RoundingMode
 @Composable
 fun PaymentCheckoutScreenRoot(viewModel: PaymentCheckoutViewModel, navController: NavHostController, fiatAmount: Double, primaryFiatCurrency: String) {
     viewModel.setNavController(navController)
+    val nfcAvailability by viewModel.nfcAvailability.collectAsStateWithLifecycle()
     LaunchedEffect(fiatAmount, primaryFiatCurrency) {
         viewModel.updatePaymentValue(fiatAmount)
         viewModel.updatePrimaryFiatCurrency(primaryFiatCurrency)
@@ -41,6 +49,7 @@ fun PaymentCheckoutScreenRoot(viewModel: PaymentCheckoutViewModel, navController
         ratesStale = viewModel.ratesStale,
         targetXMRvalue = viewModel.targetXMRvalue,
         qrCodeUri = viewModel.qrCodeUri,
+        nfcAvailability = nfcAvailability,
         generateQRCode = viewModel::generateQRCode,
         navigateBack = viewModel::navigateBack,
         errorMessage = viewModel.errorMessage,
@@ -59,6 +68,7 @@ fun PaymentCheckoutScreen(
     ratesStale: Boolean,
     targetXMRvalue: BigDecimal,
     qrCodeUri: String,
+    nfcAvailability: NfcAvailability,
     generateQRCode: (String, Int, Int, Int, Int, Int) -> Bitmap,
     navigateBack: () -> Unit,
     errorMessage: String,
@@ -89,6 +99,9 @@ fun PaymentCheckoutScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
             Text("Waiting on payment to complete", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.4f))
+            if (qrCodeUri.isNotEmpty()) {
+                NfcAvailabilityNote(nfcAvailability)
+            }
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -132,6 +145,30 @@ fun PaymentCheckoutScreen(
             }
         }
     }
+}
+
+@Composable
+private fun NfcAvailabilityNote(availability: NfcAvailability) {
+    val message = when (availability) {
+        NfcAvailability.INACTIVE -> return
+        NfcAvailability.READY -> R.string.nfc_ready
+        NfcAvailability.DISABLED -> R.string.nfc_disabled
+        NfcAvailability.TURNING_ON -> R.string.nfc_turning_on
+        NfcAvailability.UNSUPPORTED -> R.string.nfc_unsupported
+        NfcAvailability.UNAVAILABLE -> R.string.nfc_unavailable
+    }
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(
+        text = stringResource(message),
+        style = MaterialTheme.typography.labelSmall,
+        color = if (availability == NfcAvailability.READY) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        },
+        textAlign = TextAlign.Center,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+    )
 }
 
 @Composable

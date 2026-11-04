@@ -35,10 +35,13 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import com.moneromerchant.pos.data.local.usb.UsbPermissionHandler
 import com.moneromerchant.pos.data.repository.AuthRepository
 import com.moneromerchant.pos.data.repository.DataStoreRepository
+import com.moneromerchant.pos.data.repository.HceRepository
+import com.moneromerchant.pos.data.hce.NfcPaymentController
 import com.moneromerchant.pos.ui.NavGraphRoot
 import com.moneromerchant.pos.ui.Login
 import com.moneromerchant.pos.ui.PaymentEntry
@@ -60,11 +63,35 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var dataStoreRepository: DataStoreRepository
 
+    @Inject
+    lateinit var hceRepository: HceRepository
+
     companion object {
         private const val ACTION_USB_PERMISSION = "com.moneromerchant.pos.USB_PERMISSION"
     }
 
     private val usbPermissionHandler = UsbPermissionHandler()
+    private val nfcPaymentController by lazy {
+        NfcPaymentController(this, hceRepository::updateAvailability)
+    }
+    private var nfcPaymentJob: Job? = null
+
+    override fun onResume() {
+        super.onResume()
+        nfcPaymentController.onResume()
+        nfcPaymentJob = lifecycleScope.launch {
+            hceRepository.uri.collect { uri ->
+                nfcPaymentController.setActive(uri.isNotEmpty())
+            }
+        }
+    }
+
+    override fun onPause() {
+        nfcPaymentJob?.cancel()
+        nfcPaymentJob = null
+        nfcPaymentController.onPause()
+        super.onPause()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()

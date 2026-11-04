@@ -62,6 +62,7 @@ class PaymentCheckoutViewModel @Inject constructor(
     var qrCodeUri by mutableStateOf("")
     var address by mutableStateOf("")
     var errorMessage by mutableStateOf("")
+    val nfcAvailability = hceRepository.availability
 
     init {
         fetchExchangeRates()

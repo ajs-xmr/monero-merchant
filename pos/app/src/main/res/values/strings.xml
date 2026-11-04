@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="nfc_payment_request">Monero payment request</string>
+    <string name="nfc_ready">NFC ready for compatible Android wallets.</string>
+    <string name="nfc_disabled">NFC is off. Enable NFC or scan the QR code.</string>
+    <string name="nfc_turning_on">Turning NFC on…</string>
+    <string name="nfc_unsupported">NFC is not supported. Scan the QR code.</string>
+    <string name="nfc_unavailable">NFC is unavailable. Scan the QR code.</string>
 </resources>
