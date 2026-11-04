@@ -22,6 +22,7 @@ class TransactionManager @Inject constructor(
     private val backendRepository: BackendRepository,
     private val dataStoreRepository: DataStoreRepository,
     private val authRepository: AuthRepository,
+    private val hceRepository: HceRepository,
     @ApplicationScope private val coroutineScope: CoroutineScope
 ) {
     // Active transaction context
@@ -54,6 +55,7 @@ class TransactionManager @Inject constructor(
         xmrAmount: BigDecimal,
         exchangeRate: Double
     ): TransactionResult {
+        hceRepository.updateUri("")
         val normalizedAmount = xmrAmount.setScale(12, RoundingMode.UP)
         val atomicAmount = normalizedAmount
             .movePointRight(12)
@@ -119,6 +121,7 @@ class TransactionManager @Inject constructor(
     }
 
     fun clearCurrentTransaction() {
+        hceRepository.updateUri("")
         _currentTransaction.value = null
     }
 

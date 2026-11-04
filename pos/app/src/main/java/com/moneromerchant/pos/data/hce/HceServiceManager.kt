@@ -1,19 +1,27 @@
 package com.moneromerchant.pos.data.hce
 
-import android.app.Service
-import android.content.Intent
 import android.nfc.NdefMessage
 import android.nfc.NdefRecord
 import android.nfc.cardemulation.HostApduService
 import android.os.Bundle
 import android.util.Log
+import com.moneromerchant.pos.data.repository.HceRepository
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class HceServiceManager : HostApduService() {
 
-    private val tag = NdefTagEmulator()
+    @Inject
+    lateinit var hceRepository: HceRepository
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        intent?.getStringExtra("uri")?.let { uri ->
+    private val tag = NdefTagEmulator()
+    private var encodedUri: String? = null
+
+    override fun processCommandApdu(commandApdu: ByteArray, extras: Bundle?): ByteArray {
+        val uri = hceRepository.uri.value
+        if (uri != encodedUri) {
+            encodedUri = uri
             try {
                 val message = if (uri.isEmpty()) {
                     byteArrayOf()
@@ -28,10 +36,6 @@ class HceServiceManager : HostApduService() {
                 Log.w(LOG_TAG, "Unable to encode NFC payment request")
             }
         }
-        return Service.START_NOT_STICKY
-    }
-
-    override fun processCommandApdu(commandApdu: ByteArray, extras: Bundle?): ByteArray {
         return tag.processCommand(commandApdu)
     }
 
